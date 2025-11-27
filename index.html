@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vormen Verzamelaars XL</title>
+    <title>Vormen Verzamelaars XL (Sabotage)</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Open+Sans:wght@400;700&display=swap');
 
@@ -13,6 +13,7 @@
             --p2-color: #e74c3c;
             --card-bg: #ecf0f1;
             --timer-color: rgba(231, 76, 60, 0.4);
+            --sabotage-color: #f39c12; /* Oranje */
         }
 
         body {
@@ -88,6 +89,11 @@
             font-family: 'Fredoka One', cursive;
             font-size: 1.5rem;
             margin-bottom: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
         }
         .p1-name { color: var(--p1-color); }
         .p2-name { color: var(--p2-color); }
@@ -139,45 +145,15 @@
         /* --- Vormen --- */
         .shape { width: 40px; height: 40px; }
         
-        /* Shape 0-3 (Bestaand) */
         .shape-0 { background: #e74c3c; border-radius: 50%; box-shadow: inset 0 -3px 0 rgba(0,0,0,0.2); }
         .shape-1 { background: #3498db; border-radius: 5px; box-shadow: inset 0 -3px 0 rgba(0,0,0,0.2); }
         .shape-2 { background: #2ecc71; clip-path: polygon(50% 0%, 0% 100%, 100% 100%); height: 35px; }
         .shape-3 { background: #f1c40f; clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }
-
-        /* --- NIEUWE VORMEN --- */
-        
-        /* Shape 4: Zeshoek (Paars) */
-        .shape-4 {
-            background: #9b59b6;
-            clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
-        }
-
-        /* Shape 5: Plusteken (Oranje) - Gemaakt met pseudo-elementen */
-        .shape-5 {
-            background: transparent; /* De container zelf is transparant */
-            position: relative;
-        }
-        /* Horizontale en verticale balk */
-        .shape-5::before, .shape-5::after {
-            content: '';
-            position: absolute;
-            background: #e67e22;
-            border-radius: 4px;
-            box-shadow: inset 0 -2px 0 rgba(0,0,0,0.1);
-        }
-        /* Horizontaal */
-        .shape-5::before {
-            width: 100%; height: 12px;
-            top: 50%; left: 0;
-            transform: translateY(-50%);
-        }
-        /* Verticaal */
-        .shape-5::after {
-            height: 100%; width: 12px;
-            left: 50%; top: 0;
-            transform: translateX(-50%);
-        }
+        .shape-4 { background: #9b59b6; clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%); }
+        .shape-5 { background: transparent; position: relative; }
+        .shape-5::before, .shape-5::after { content: ''; position: absolute; background: #e67e22; border-radius: 4px; box-shadow: inset 0 -2px 0 rgba(0,0,0,0.1); }
+        .shape-5::before { width: 100%; height: 12px; top: 50%; left: 0; transform: translateY(-50%); }
+        .shape-5::after { height: 100%; width: 12px; left: 50%; top: 0; transform: translateX(-50%); }
 
 
         /* --- Midden Gebied --- */
@@ -195,6 +171,29 @@
             text-transform: uppercase; letter-spacing: 2px;
         }
 
+        /* --- Sabotage Knop --- */
+        .sabotage-btn {
+            padding: 8px 15px;
+            font-size: 0.9rem;
+            background: var(--sabotage-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .sabotage-btn:hover:not(:disabled) {
+            background: #e67e22;
+            transform: scale(1.05);
+        }
+
+        .sabotage-btn:disabled {
+            background: rgba(243, 156, 18, 0.4);
+            cursor: not-allowed;
+        }
+
         /* --- Overlay --- */
         #overlay {
             position: absolute;
@@ -208,7 +207,7 @@
             text-align: center;
         }
 
-        button {
+        button.start-btn {
             padding: 15px 30px;
             font-size: 1.2rem;
             background: #27ae60;
@@ -220,7 +219,7 @@
             transition: transform 0.2s;
             margin-top: 20px;
         }
-        button:hover { transform: scale(1.1); background: #2ecc71; }
+        button.start-btn:hover { transform: scale(1.1); background: #2ecc71; }
         .hidden { display: none !important; }
 
         .win-anim { animation: celebrate 0.5s infinite; color: #f1c40f; }
@@ -234,7 +233,10 @@
 
     <div id="game-container">
         <div id="p2-area" class="player-area">
-            <div class="player-name p2-name">Speler 2</div>
+            <div class="player-name p2-name">
+                Speler 2
+                <button class="sabotage-btn" id="p1-sabotage-btn" onclick="handleSabotage(1)" disabled>Saboteer Pot (1x)</button>
+            </div>
             <div class="hand" id="p2-hand"></div>
         </div>
 
@@ -246,23 +248,26 @@
 
         <div id="p1-area" class="player-area">
             <div class="hand" id="p1-hand"></div>
-            <div class="player-name p1-name">Speler 1</div>
+            <div class="player-name p1-name">
+                Speler 1
+                <button class="sabotage-btn" id="p2-sabotage-btn" onclick="handleSabotage(2)" disabled>Saboteer Pot (1x)</button>
+            </div>
         </div>
     </div>
 
     <div id="overlay">
         <h1 id="overlay-title">Vormen Race XL</h1>
         <p id="overlay-msg">Verzamel 3 van dezelfde vorm.<br>Je hebt 1 minuut!</p>
-        <button onclick="startGame()">Start Spel</button>
+        <button class="start-btn" onclick="startGame()">Start Spel</button>
     </div>
 
     <script>
-        // --- Configuratie AANGEPAST ---
-        // Nu 6 vormen (0 t/m 5)
+        // --- Configuratie ---
         const SHAPES = [0, 1, 2, 3, 4, 5]; 
         const TOTAL_STONES_PER_SHAPE = 5;
         const TIME_LIMIT = 60; 
 
+        // --- Spel Variabelen ---
         let deck = [];
         let p1Hand = [];
         let p2Hand = [];
@@ -272,13 +277,28 @@
         let turnPhase = 'discard'; 
         let timerInterval;
         let timeRemaining = TIME_LIMIT;
+        
+        // --- SABOTAGE VARIABELEN ---
+        let p1SabotageUsed = false;
+        let p2SabotageUsed = false;
 
         // --- Audio ---
         const AudioContext = window.AudioContext || window.webkitAudioContext;
-        const audioCtx = new AudioContext();
+        let audioCtx = null; 
+
+        function initializeAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
 
         function playSound(type) {
+            if (!audioCtx) return; 
             if (audioCtx.state === 'suspended') audioCtx.resume();
+            
             const osc = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
             osc.connect(gainNode);
@@ -297,6 +317,14 @@
                 osc.type = 'triangle'; osc.frequency.setValueAtTime(500, now); osc.frequency.linearRampToValueAtTime(700, now + 0.1);
                 gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.15);
                 osc.start(now); osc.stop(now + 0.15);
+            } else if (type === 'sabotage') { // Nieuw geluid voor sabotage
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.linearRampToValueAtTime(100, now + 0.4);
+                gainNode.gain.setValueAtTime(0.2, now);
+                gainNode.gain.linearRampToValueAtTime(0, now + 0.4);
+                osc.start(now);
+                osc.stop(now + 0.4);
             } else if (type === 'win') {
                 osc.type = 'square';
                 osc.frequency.setValueAtTime(440, now); osc.frequency.setValueAtTime(554, now + 0.1); 
@@ -333,28 +361,29 @@
             p1Hand = [];
             p2Hand = [];
             
-            // De logica om unieke handen te dealen werkt ook prima met 6 vormen
             for(let s of SHAPES) {
                 let idx = deck.indexOf(s);
-                p1Hand.push(deck.splice(idx, 1)[0]);
+                if (idx !== -1) p1Hand.push(deck.splice(idx, 1)[0]);
             }
             for(let s of SHAPES) {
                 let idx = deck.indexOf(s);
-                p2Hand.push(deck.splice(idx, 1)[0]);
+                if (idx !== -1) p2Hand.push(deck.splice(idx, 1)[0]);
             }
-            // Omdat er nu 6 vormen zijn, hebben we 2 vormen 'over' na het dealen van unieke handen.
-            // Deze stoppen we terug in het deck en schudden opnieuw voor de zekerheid.
-            deck.push(...p1Hand.splice(4, 2)); // Verwijder de laatste 2 (zodat hand 4 is) en stop terug
-            deck.push(...p2Hand.splice(4, 2));
+            
+            // Corrigeer handgrootte naar 4 en leg terug
+            while (p1Hand.length > 4) deck.push(p1Hand.pop());
+            while (p2Hand.length > 4) deck.push(p2Hand.pop());
 
             shuffle(p1Hand);
             shuffle(p2Hand);
-            shuffle(deck); // Deck opnieuw schudden met de teruggelegde kaarten
+            shuffle(deck); 
 
-            centerTiles = [deck.pop()];
+            // Start met 1 steen in het midden
+            centerTiles = deck.length > 0 ? [deck.pop()] : []; 
         }
 
         function startGame() {
+            initializeAudio(); // Activeer audio bij klik
             document.getElementById('overlay').classList.add('hidden');
             initDeck();
             dealInitialHands();
@@ -363,6 +392,8 @@
             turnPhase = 'discard'; 
             gameActive = true;
             timeRemaining = TIME_LIMIT;
+            p1SabotageUsed = false; // Reset
+            p2SabotageUsed = false; // Reset
             
             render();
             startTimer();
@@ -384,6 +415,34 @@
             }, 1000);
         }
 
+        // --- SABOTAGE FUNCTIE ---
+        function handleSabotage(player) {
+            if (!gameActive || player !== currentPlayer || turnPhase !== 'discard') return;
+            
+            const btnId = `p${player}-sabotage-btn`;
+            const btn = document.getElementById(btnId);
+
+            if ((player === 1 && p1SabotageUsed) || (player === 2 && p2SabotageUsed)) return;
+
+            // Markeer knop als gebruikt
+            if (player === 1) p1SabotageUsed = true;
+            else p2SabotageUsed = true;
+
+            // Reset de pot en plaats 1 nieuwe kaart
+            centerTiles = [];
+            if (deck.length > 0) {
+                centerTiles.push(deck.pop());
+            }
+
+            playSound('sabotage');
+            updateStatus(`Speler ${player} heeft de pot gesaboteerd! Gooi nu een kaart weg om de tweede kaart te trekken.`);
+            
+            // Knop uitschakelen en renderen
+            btn.disabled = true;
+            render();
+        }
+
+
         function handleHandClick(player, index) {
             if (!gameActive) return;
             if (player !== currentPlayer) return;
@@ -393,6 +452,7 @@
             deck.unshift(card); 
             playSound('click');
 
+            // Voeg de tweede (willekeurige) kaart toe aan de pot
             if (deck.length > 0) {
                 centerTiles.push(deck.pop()); 
                 playSound('appear');
@@ -412,13 +472,14 @@
             else p2Hand.push(pickedCard);
 
             playSound('pickup');
-            centerTiles.splice(index, 1);
+            centerTiles.splice(index, 1); 
 
             if (checkWin(currentPlayer === 1 ? p1Hand : p2Hand)) {
                 endGame(currentPlayer);
                 return;
             }
 
+            // Wissel beurt en reset fase
             currentPlayer = (currentPlayer === 1) ? 2 : 1;
             turnPhase = 'discard';
             updateStatus(`Speler ${currentPlayer}: Gooi een kaart weg.`);
@@ -486,12 +547,23 @@
             const centerContainer = document.getElementById('center-pot');
             const p1Area = document.getElementById('p1-area');
             const p2Area = document.getElementById('p2-area');
+            
+            // De ID's van de knoppen zijn NIET gewisseld (p1-sabotage-btn blijft p1-sabotage-btn)
+            // Maar ze zijn fysiek omgewisseld in de HTML.
+            const p1Btn = document.getElementById('p1-sabotage-btn');
+            const p2Btn = document.getElementById('p2-sabotage-btn');
 
+            // Highlight actieve speler
             if (currentPlayer === 1) {
                 p1Area.classList.add('active-turn'); p2Area.classList.remove('active-turn');
             } else {
                 p1Area.classList.remove('active-turn'); p2Area.classList.add('active-turn');
             }
+            
+            // Sabotage knop status (de logica blijft gebaseerd op de ID's en de speler)
+            if (p1Btn) p1Btn.disabled = !gameActive || currentPlayer !== 1 || p1SabotageUsed || turnPhase !== 'discard';
+            if (p2Btn) p2Btn.disabled = !gameActive || currentPlayer !== 2 || p2SabotageUsed || turnPhase !== 'discard';
+
 
             p1Container.innerHTML = p1Hand.map((val, idx) => {
                 const disabled = (currentPlayer !== 1 || turnPhase !== 'discard');
@@ -509,9 +581,6 @@
                 return createCardHTML(val, `handleCenterClick(${idx})`, disabled, isNew);
             }).join('');
         }
-    </script>
-</body>
-</html>
     </script>
 </body>
 </html>
