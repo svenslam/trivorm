@@ -3,37 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vormenruil Spel</title>
+    <title>Vormen Verzamelaars XL</title>
     <link rel="stylesheet" href="style.css">
-</head>
+    </head>
 <body>
 
-    <header>
-        <h1>Vormenruil Spel 🔄</h1>
-        <p id="status-message">Speler 1 is aan de beurt. Kies een steen uit je hand.</p>
-    </header>
+    <div id="timer-layer"></div>
 
     <div id="game-container">
-        <div class="player-area" id="player-1-area">
-            <h2>Speler 1 Hand</h2>
-            <div class="hand" id="player-1-hand">
-                </div>
+        <div id="p2-area" class="player-area">
+            <div class="player-name p2-name">Speler 2</div>
+            <div class="hand" id="p2-hand"></div>
         </div>
 
         <div id="center-area">
-            <h2>Centrum Stenen</h2>
-            <div class="hand" id="center-stones">
-                </div>
-            <button id="reset-button" style="display:none;">Nieuw Spel</button>
+            <div class="pot-label">De Pot</div>
+            <div class="center-pot" id="center-pot"></div>
+            <div id="status-bar">Welkom!</div>
         </div>
 
-        <div class="player-area" id="player-2-area">
-            <h2>Speler 2 Hand</h2>
-            <div class="hand" id="player-2-hand">
-                </div>
+        <div id="p1-area" class="player-area">
+            <div class="hand" id="p1-hand"></div>
+            <div class="player-name p1-name">Speler 1</div>
         </div>
     </div>
 
+    <div id="overlay">
+        <h1 id="overlay-title">Vormen Race XL</h1>
+        <p id="overlay-msg">Verzamel 3 van dezelfde vorm.<br>Je hebt 1 minuut!</p>
+        <button onclick="startGame()">Start Spel</button>
+    </div>
+
     <script src="script.js"></script>
-</body>
+    </body>
 </html>
