@@ -3,9 +3,222 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vormen Verzamelaars XL</title>
-    <link rel="stylesheet" href="style.css">
-    </head>
+    <title>Vormen Verzamelaars</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Open+Sans:wght@400;700&display=swap');
+
+        :root {
+            --bg-color: #2c3e50;
+            --p1-color: #3498db;
+            --p2-color: #e74c3c;
+            --card-bg: #ecf0f1;
+            --timer-color: rgba(231, 76, 60, 0.4);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Open Sans', sans-serif;
+            background-color: var(--bg-color);
+            color: white;
+            overflow: hidden; /* Belangrijk voor de timer achtergrond */
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            user-select: none;
+        }
+
+        /* --- De Timer Achtergrond --- */
+        #timer-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 0%;
+            background-color: var(--timer-color);
+            z-index: 0;
+            transition: height 1s linear; /* Wordt via JS aangepast */
+            pointer-events: none;
+        }
+
+        /* --- UI Layout --- */
+        #game-container {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 800px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            font-family: 'Fredoka One', cursive;
+            margin: 0;
+            text-shadow: 2px 2px 0px rgba(0,0,0,0.2);
+        }
+
+        #status-bar {
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            border-radius: 20px;
+            text-align: center;
+            margin-top: 10px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            min-height: 1.5em;
+        }
+
+        /* --- Spelers Gebieden --- */
+        .player-area {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .active-turn {
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+            background: rgba(255,255,255,0.2);
+            transform: scale(1.02);
+        }
+
+        .player-name {
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .p1-name { color: var(--p1-color); }
+        .p2-name { color: var(--p2-color); }
+
+        /* --- Kaarten en Handen --- */
+        .hand, .center-pot {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .card {
+            width: 70px;
+            height: 100px;
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 12px rgba(0,0,0,0.4);
+        }
+
+        .card.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .card.selected {
+            border: 3px solid #f1c40f;
+            transform: translateY(-10px);
+        }
+
+        /* --- Vormen (CSS Shapes) --- */
+        .shape { width: 40px; height: 40px; }
+        
+        /* Cirkel - Rood */
+        .shape-0 { 
+            background: #e74c3c; 
+            border-radius: 50%; 
+            box-shadow: inset 0 -3px 0 rgba(0,0,0,0.2);
+        }
+        /* Vierkant - Blauw */
+        .shape-1 { 
+            background: #3498db; 
+            border-radius: 5px;
+            box-shadow: inset 0 -3px 0 rgba(0,0,0,0.2);
+        }
+        /* Driehoek - Groen (gebruikt clip-path) */
+        .shape-2 { 
+            background: #2ecc71; 
+            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+            height: 35px; /* iets lager voor balans */
+        }
+        /* Ster - Geel (gebruikt SVG data of clip path, clip path is makkelijker hier) */
+        .shape-3 { 
+            background: #f1c40f;
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+        }
+
+        /* --- Midden Gebied --- */
+        #center-area {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .pot-label { font-size: 0.9rem; opacity: 0.8; text-transform: uppercase; letter-spacing: 2px; }
+
+        /* --- Overlay (Start / Game Over) --- */
+        #overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: 'Fredoka One', cursive;
+            transition: transform 0.2s;
+            margin-top: 20px;
+        }
+        button:hover { transform: scale(1.1); background: #2ecc71; }
+
+        .hidden { display: none !important; }
+
+        /* Confetti effect simpel */
+        @keyframes celebrate {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        .win-anim { animation: celebrate 0.5s infinite; color: #f1c40f; }
+
+    </style>
+</head>
 <body>
 
     <div id="timer-layer"></div>
@@ -17,7 +230,7 @@
         </div>
 
         <div id="center-area">
-            <div class="pot-label">De Pot</div>
+            <div class="pot-label">De Pot (Klik om te pakken)</div>
             <div class="center-pot" id="center-pot"></div>
             <div id="status-bar">Welkom!</div>
         </div>
@@ -29,11 +242,300 @@
     </div>
 
     <div id="overlay">
-        <h1 id="overlay-title">Vormen Race XL</h1>
+        <h1 id="overlay-title">Vormen Race</h1>
         <p id="overlay-msg">Verzamel 3 van dezelfde vorm.<br>Je hebt 1 minuut!</p>
         <button onclick="startGame()">Start Spel</button>
     </div>
 
-    <script src="script.js"></script>
-    </body>
+    <script>
+        // --- Configuratie & State ---
+        const SHAPES = [0, 1, 2, 3]; // 0:Rood, 1:Blauw, 2:Groen, 3:Geel
+        const TOTAL_STONES_PER_SHAPE = 5;
+        const TIME_LIMIT = 60; // seconden
+
+        let deck = [];
+        let p1Hand = [];
+        let p2Hand = [];
+        let centerTiles = [];
+        let currentPlayer = 1; // 1 of 2
+        let gameActive = false;
+        let turnPhase = 'discard'; // 'discard' (kies handkaart) of 'pick' (kies potkaart)
+        let timerInterval;
+        let timeRemaining = TIME_LIMIT;
+
+        // --- Audio Context (Synthesizer) ---
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContext();
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+            
+            if (type === 'click') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
+                gainNode.gain.setValueAtTime(0.1, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            } else if (type === 'pickup') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.linearRampToValueAtTime(500, now + 0.1);
+                gainNode.gain.setValueAtTime(0.1, now);
+                gainNode.gain.linearRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            } else if (type === 'win') {
+                osc.type = 'square';
+                // Arpeggio
+                osc.frequency.setValueAtTime(440, now);
+                osc.frequency.setValueAtTime(554, now + 0.1); // C#
+                osc.frequency.setValueAtTime(659, now + 0.2); // E
+                osc.frequency.setValueAtTime(880, now + 0.3); // A
+                gainNode.gain.setValueAtTime(0.1, now);
+                gainNode.gain.linearRampToValueAtTime(0, now + 0.8);
+                osc.start(now);
+                osc.stop(now + 0.8);
+            } else if (type === 'lose') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.linearRampToValueAtTime(50, now + 0.5);
+                gainNode.gain.setValueAtTime(0.2, now);
+                gainNode.gain.linearRampToValueAtTime(0, now + 0.5);
+                osc.start(now);
+                osc.stop(now + 0.5);
+            }
+        }
+
+        // --- Game Logic ---
+
+        function initDeck() {
+            deck = [];
+            for (let s of SHAPES) {
+                for (let i = 0; i < TOTAL_STONES_PER_SHAPE; i++) {
+                    deck.push(s);
+                }
+            }
+            shuffle(deck);
+        }
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // Zorg dat handen starten met 4 unieke vormen
+        function dealInitialHands() {
+            // Dit is een simpele manier: zoek handmatig 4 unieke voor P1 en P2 uit het deck
+            // Om crashes te voorkomen in zeldzame shuffle gevallen, doen we het deterministisch voor start
+            
+            // Filter unieke set voor P1
+            p1Hand = [];
+            for(let s of SHAPES) {
+                let idx = deck.indexOf(s);
+                p1Hand.push(deck.splice(idx, 1)[0]);
+            }
+            
+            // Filter unieke set voor P2
+            p2Hand = [];
+            for(let s of SHAPES) {
+                let idx = deck.indexOf(s);
+                p2Hand.push(deck.splice(idx, 1)[0]);
+            }
+
+            // Shuffle de handen zodat de volgorde niet altijd Rood-Blauw-Groen-Geel is
+            shuffle(p1Hand);
+            shuffle(p2Hand);
+
+            // Vul het midden met 2 kaarten
+            centerTiles = [deck.pop(), deck.pop()];
+        }
+
+        function startGame() {
+            document.getElementById('overlay').classList.add('hidden');
+            initDeck();
+            dealInitialHands();
+            
+            currentPlayer = 1;
+            turnPhase = 'discard'; // Fase 1: Gooi weg
+            gameActive = true;
+            timeRemaining = TIME_LIMIT;
+            
+            render();
+            startTimer();
+            updateStatus("Speler 1: Klik op een kaart in je hand om weg te doen.");
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            const timerLayer = document.getElementById('timer-layer');
+            timerLayer.style.transition = 'none';
+            timerLayer.style.height = '0%';
+            
+            // Force reflow
+            void timerLayer.offsetWidth;
+
+            timerLayer.style.transition = `height ${TIME_LIMIT}s linear`;
+            timerLayer.style.height = '100%';
+
+            timerInterval = setInterval(() => {
+                timeRemaining--;
+                if (timeRemaining <= 0) {
+                    endGame(null); // Tijd op
+                }
+            }, 1000);
+        }
+
+        function handleHandClick(player, index) {
+            if (!gameActive) return;
+            if (player !== currentPlayer) return;
+            if (turnPhase !== 'discard') return; // Moet eerst weggooien
+
+            // Kaart gaat 'terug in de pot' (onderop de stapel of gewoon weg, prompt zegt "terug in de pot")
+            // Logica: Verwijder uit hand, stop onderop deck.
+            const card = (player === 1) ? p1Hand.splice(index, 1)[0] : p2Hand.splice(index, 1)[0];
+            deck.unshift(card); // Terug in de stapel
+
+            playSound('click');
+            turnPhase = 'pick'; // Nu fase 2: Pakken
+            updateStatus(`Speler ${currentPlayer}: Kies een kaart uit het midden.`);
+            render();
+        }
+
+        function handleCenterClick(index) {
+            if (!gameActive) return;
+            if (turnPhase !== 'pick') return;
+
+            // Pak kaart
+            const pickedCard = centerTiles[index];
+            
+            // Geef aan speler
+            if (currentPlayer === 1) p1Hand.push(pickedCard);
+            else p2Hand.push(pickedCard);
+
+            playSound('pickup');
+
+            // Check winconditie DIRECT na pakken
+            if (checkWin(currentPlayer === 1 ? p1Hand : p2Hand)) {
+                endGame(currentPlayer);
+                return;
+            }
+
+            // Vervang de gepakte kaart in het midden met een nieuwe van de stapel
+            if (deck.length > 0) {
+                // Pak willekeurige kaart uit deck (hier gewoon de bovenste, want deck is al geschud)
+                centerTiles[index] = deck.pop();
+            } else {
+                // Deck is op? (Zou niet moeten kunnen met 20 stenen en deze regels, maar voor zekerheid)
+                centerTiles[index] = -1; // Leeg
+            }
+
+            // Wissel beurt
+            currentPlayer = (currentPlayer === 1) ? 2 : 1;
+            turnPhase = 'discard';
+            updateStatus(`Speler ${currentPlayer}: Klik op een kaart in je hand om weg te doen.`);
+            render();
+        }
+
+        function checkWin(hand) {
+            const counts = {};
+            for (let val of hand) {
+                counts[val] = (counts[val] || 0) + 1;
+                if (counts[val] >= 3) return true;
+            }
+            return false;
+        }
+
+        function endGame(winner) {
+            gameActive = false;
+            clearInterval(timerInterval);
+            document.getElementById('timer-layer').style.transition = 'none'; // Stop animatie
+            
+            const overlay = document.getElementById('overlay');
+            const title = document.getElementById('overlay-title');
+            const msg = document.getElementById('overlay-msg');
+            const btn = overlay.querySelector('button');
+
+            overlay.classList.remove('hidden');
+            btn.innerText = "Opnieuw Spelen";
+
+            if (winner) {
+                playSound('win');
+                title.innerText = `Speler ${winner} wint!`;
+                title.classList.add('win-anim');
+                msg.innerText = "Gefeliciteerd! Je hebt 3 gelijke vormen.";
+            } else {
+                playSound('lose');
+                title.innerText = "TIJD OP!";
+                title.classList.remove('win-anim');
+                msg.innerText = "Helaas, niemand heeft gewonnen.";
+            }
+        }
+
+        function updateStatus(text) {
+            document.getElementById('status-bar').innerText = text;
+        }
+
+        // --- Rendering ---
+
+        function createCardHTML(shapeVal, onClickStr, isDisabled, isSelected) {
+            let shapeClass = shapeVal >= 0 ? `shape-${shapeVal}` : '';
+            let disabledClass = isDisabled ? 'disabled' : '';
+            let selectedClass = isSelected ? 'selected' : '';
+            
+            return `
+                <div class="card ${disabledClass} ${selectedClass}" onclick="${isDisabled ? '' : onClickStr}">
+                    <div class="shape ${shapeClass}"></div>
+                </div>
+            `;
+        }
+
+        function render() {
+            const p1Container = document.getElementById('p1-hand');
+            const p2Container = document.getElementById('p2-hand');
+            const centerContainer = document.getElementById('center-pot');
+            const p1Area = document.getElementById('p1-area');
+            const p2Area = document.getElementById('p2-area');
+
+            // Highlight actieve speler
+            if (currentPlayer === 1) {
+                p1Area.classList.add('active-turn');
+                p2Area.classList.remove('active-turn');
+            } else {
+                p1Area.classList.remove('active-turn');
+                p2Area.classList.add('active-turn');
+            }
+
+            // Render P1 Hand
+            p1Container.innerHTML = p1Hand.map((val, idx) => {
+                // P1 mag alleen klikken als het zijn beurt is en fase 'discard' is
+                const disabled = (currentPlayer !== 1 || turnPhase !== 'discard');
+                return createCardHTML(val, `handleHandClick(1, ${idx})`, disabled, false);
+            }).join('');
+
+            // Render P2 Hand
+            p2Container.innerHTML = p2Hand.map((val, idx) => {
+                const disabled = (currentPlayer !== 2 || turnPhase !== 'discard');
+                return createCardHTML(val, `handleHandClick(2, ${idx})`, disabled, false);
+            }).join('');
+
+            // Render Center Pot
+            centerContainer.innerHTML = centerTiles.map((val, idx) => {
+                // Pot mag alleen geklikt worden in 'pick' fase
+                const disabled = (turnPhase !== 'pick');
+                return createCardHTML(val, `handleCenterClick(${idx})`, disabled, !disabled); // Highlight als je mag pakken
+            }).join('');
+        }
+
+    </script>
+</body>
 </html>
