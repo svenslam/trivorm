@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vormen Verzamelaars XL (Sabotage)</title>
+    <title>Vormen Race XL (Sabotage)</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Open+Sans:wght@400;700&display=swap');
 
         :root {
             --bg-color: #2c3e50;
-            --p1-color: #3498db;
-            --p2-color: #e74c3c;
+            --p1-color: #3498db; /* Blauw */
+            --p2-color: #e74c3c; /* Rood */
             --card-bg: #ecf0f1;
             --timer-color: rgba(231, 76, 60, 0.4);
             --sabotage-color: #f39c12; /* Oranje */
@@ -52,6 +52,7 @@
             justify-content: space-between;
             padding: 20px;
             box-sizing: border-box;
+            border: 7mm solid black;
         }
 
         #status-bar {
@@ -77,6 +78,7 @@
             flex-direction: column;
             align-items: center;
             transition: all 0.3s ease;
+            position: relative; 
         }
 
         .active-turn {
@@ -96,7 +98,47 @@
             width: 100%;
         }
         .p1-name { color: var(--p1-color); }
-        .p2-name { color: var(--p2-color); }
+        .p2-name { 
+            color: var(--p2-color); 
+            transform: rotate(180deg); 
+        }
+        
+        .p2-name .sabotage-btn {
+            transform: rotate(180deg);
+        }
+        
+        /* --- Win/Loss Status Overlay --- */
+        .player-game-status {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2.5rem;
+            font-family: 'Fredoka One', cursive;
+            background: rgba(0,0,0,0.7);
+            border-radius: 15px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s;
+            text-shadow: 0 0 10px black;
+        }
+
+        /* Status voor Speler 2 moet 180 graden terug draaien */
+        #p2-status {
+            transform: rotate(180deg);
+        }
+
+        .win-message {
+            color: #2ecc71; /* Groen */
+            opacity: 1;
+            animation: celebrate 0.5s infinite;
+        }
+
+        .lose-message {
+            color: #e74c3c; /* Rood */
+            opacity: 1;
+        }
 
         /* --- Kaarten en Handen --- */
         .hand, .center-pot {
@@ -105,6 +147,11 @@
             justify-content: center;
             min-height: 110px;
             align-items: center;
+        }
+        
+        /* Draai hand Speler 2 om zodat het lijkt alsof de speler er bovenaan tegenover zit */
+        #p2-hand {
+            transform: rotate(180deg);
         }
 
         .card {
@@ -121,7 +168,7 @@
             position: relative;
         }
 
-        .card:hover {
+        .card:hover:not(:disabled) {
             transform: translateY(-5px);
             box-shadow: 0 8px 12px rgba(0,0,0,0.4);
         }
@@ -145,16 +192,12 @@
         /* --- Vormen --- */
         .shape { width: 40px; height: 40px; }
         
-        .shape-0 { background: #e74c3c; border-radius: 50%; box-shadow: inset 0 -3px 0 rgba(0,0,0,0.2); }
-        .shape-1 { background: #3498db; border-radius: 5px; box-shadow: inset 0 -3px 0 rgba(0,0,0,0.2); }
-        .shape-2 { background: #2ecc71; clip-path: polygon(50% 0%, 0% 100%, 100% 100%); height: 35px; }
-        .shape-3 { background: #f1c40f; clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }
-        .shape-4 { background: #9b59b6; clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%); }
-        .shape-5 { background: transparent; position: relative; }
-        .shape-5::before, .shape-5::after { content: ''; position: absolute; background: #e67e22; border-radius: 4px; box-shadow: inset 0 -2px 0 rgba(0,0,0,0.1); }
-        .shape-5::before { width: 100%; height: 12px; top: 50%; left: 0; transform: translateY(-50%); }
-        .shape-5::after { height: 100%; width: 12px; left: 50%; top: 0; transform: translateX(-50%); }
-
+        .shape-0 { background: #e74c3c; border-radius: 50%; box-shadow: inset 0 -3px 0 rgba(0,0,0,0.2); } /* Cirkel Rood */
+        .shape-1 { background: #3498db; border-radius: 5px; box-shadow: inset 0 -3px 0 rgba(0,0,0,0.2); } /* Vierkant Blauw */
+        .shape-2 { background: #2ecc71; clip-path: polygon(50% 0%, 0% 100%, 100% 100%); height: 35px; } /* Driehoek Groen */
+        .shape-3 { background: #f1c40f; clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); } /* Ster Geel */
+        .shape-4 { background: #9b59b6; clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%); } /* Zeshoek Paars */
+        .shape-5 { background: #1abc9c; border-radius: 50% / 30% 70% 50% 50%; box-shadow: inset 0 -3px 0 rgba(0,0,0,0.2); } /* Druppel Mint */
 
         /* --- Midden Gebied --- */
         #center-area {
@@ -192,6 +235,7 @@
         .sabotage-btn:disabled {
             background: rgba(243, 156, 18, 0.4);
             cursor: not-allowed;
+            transform: none;
         }
 
         /* --- Overlay --- */
@@ -222,9 +266,8 @@
         button.start-btn:hover { transform: scale(1.1); background: #2ecc71; }
         .hidden { display: none !important; }
 
-        .win-anim { animation: celebrate 0.5s infinite; color: #f1c40f; }
         @keyframes celebrate { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
-
+        
     </style>
 </head>
 <body>
@@ -233,9 +276,10 @@
 
     <div id="game-container">
         <div id="p2-area" class="player-area">
+            <div id="p2-status" class="player-game-status hidden"></div> 
             <div class="player-name p2-name">
+                <button class="sabotage-btn" id="p2-sabotage-btn" onclick="handleSabotage(2)" disabled>Saboteer Pot (1x)</button>
                 Speler 2
-                <button class="sabotage-btn" id="p1-sabotage-btn" onclick="handleSabotage(1)" disabled>Saboteer Pot (1x)</button>
             </div>
             <div class="hand" id="p2-hand"></div>
         </div>
@@ -247,24 +291,26 @@
         </div>
 
         <div id="p1-area" class="player-area">
+            <div id="p1-status" class="player-game-status hidden"></div>
             <div class="hand" id="p1-hand"></div>
             <div class="player-name p1-name">
                 Speler 1
-                <button class="sabotage-btn" id="p2-sabotage-btn" onclick="handleSabotage(2)" disabled>Saboteer Pot (1x)</button>
+                <button class="sabotage-btn" id="p1-sabotage-btn" onclick="handleSabotage(1)" disabled>Saboteer Pot (1x)</button>
             </div>
         </div>
     </div>
 
     <div id="overlay">
         <h1 id="overlay-title">Vormen Race XL</h1>
-        <p id="overlay-msg">Verzamel 3 van dezelfde vorm.<br>Je hebt 1 minuut!</p>
+        <p id="overlay-msg">Verzamel **3 van dezelfde vorm** in je hand.<br>Eerst weggooien, dan pakken! Je hebt **1 minuut**!</p>
         <button class="start-btn" onclick="startGame()">Start Spel</button>
     </div>
 
     <script>
         // --- Configuratie ---
-        const SHAPES = [0, 1, 2, 3, 4, 5]; 
-        const TOTAL_STONES_PER_SHAPE = 5;
+        const USED_SHAPES = [0, 1, 2, 3]; 
+        const TOTAL_STONES_PER_SHAPE = 5; 
+        const HAND_SIZE = 4;
         const TIME_LIMIT = 60; 
 
         // --- Spel Variabelen ---
@@ -278,7 +324,6 @@
         let timerInterval;
         let timeRemaining = TIME_LIMIT;
         
-        // --- SABOTAGE VARIABELEN ---
         let p1SabotageUsed = false;
         let p2SabotageUsed = false;
 
@@ -287,17 +332,20 @@
         let audioCtx = null; 
 
         function initializeAudio() {
-            if (!audioCtx) {
-                audioCtx = new AudioContext();
-            }
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
+            try {
+                if (!audioCtx) {
+                    audioCtx = new AudioContext();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+            } catch (e) {
+                console.error("Audio Context niet beschikbaar:", e);
             }
         }
 
         function playSound(type) {
-            if (!audioCtx) return; 
-            if (audioCtx.state === 'suspended') audioCtx.resume();
+            if (!audioCtx || audioCtx.state === 'suspended') return;
             
             const osc = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
@@ -317,7 +365,7 @@
                 osc.type = 'triangle'; osc.frequency.setValueAtTime(500, now); osc.frequency.linearRampToValueAtTime(700, now + 0.1);
                 gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.15);
                 osc.start(now); osc.stop(now + 0.15);
-            } else if (type === 'sabotage') { // Nieuw geluid voor sabotage
+            } else if (type === 'sabotage') {
                 osc.type = 'sawtooth';
                 osc.frequency.setValueAtTime(300, now);
                 osc.frequency.linearRampToValueAtTime(100, now + 0.4);
@@ -325,12 +373,29 @@
                 gainNode.gain.linearRampToValueAtTime(0, now + 0.4);
                 osc.start(now);
                 osc.stop(now + 0.4);
-            } else if (type === 'win') {
+            } else if (type === 'tick') {
+                // Volume aangepast naar 0.15 (harder)
                 osc.type = 'square';
-                osc.frequency.setValueAtTime(440, now); osc.frequency.setValueAtTime(554, now + 0.1); 
-                osc.frequency.setValueAtTime(659, now + 0.2); osc.frequency.setValueAtTime(880, now + 0.3); 
-                gainNode.gain.setValueAtTime(0.1, now); gainNode.gain.linearRampToValueAtTime(0, now + 1.0);
-                osc.start(now); osc.stop(now + 1.0);
+                osc.frequency.setValueAtTime(100, now); 
+                gainNode.gain.setValueAtTime(0.15, now); 
+                gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.05); 
+                osc.start(now);
+                osc.stop(now + 0.05);
+            }
+            else if (type === 'win') {
+                const freqs = [523.25, 587.33, 659.25, 783.99, 1046.5];
+                freqs.forEach((freq, index) => {
+                    const winOsc = audioCtx.createOscillator();
+                    const winGain = audioCtx.createGain();
+                    winOsc.connect(winGain);
+                    winGain.connect(audioCtx.destination);
+                    winOsc.type = 'square';
+                    winOsc.frequency.setValueAtTime(freq, now + index * 0.1);
+                    winGain.gain.setValueAtTime(0.05, now + index * 0.1);
+                    winGain.gain.linearRampToValueAtTime(0, now + index * 0.1 + 0.08);
+                    winOsc.start(now + index * 0.1);
+                    winOsc.stop(now + index * 0.1 + 0.1);
+                });
             } else if (type === 'lose') {
                 osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); osc.frequency.linearRampToValueAtTime(50, now + 0.6);
                 gainNode.gain.setValueAtTime(0.2, now); gainNode.gain.linearRampToValueAtTime(0, now + 0.6);
@@ -342,7 +407,7 @@
 
         function initDeck() {
             deck = [];
-            for (let s of SHAPES) {
+            for (let s of USED_SHAPES) {
                 for (let i = 0; i < TOTAL_STONES_PER_SHAPE; i++) {
                     deck.push(s);
                 }
@@ -361,30 +426,22 @@
             p1Hand = [];
             p2Hand = [];
             
-            for(let s of SHAPES) {
-                let idx = deck.indexOf(s);
-                if (idx !== -1) p1Hand.push(deck.splice(idx, 1)[0]);
+            for (let i = 0; i < HAND_SIZE; i++) {
+                if (deck.length > 0) p1Hand.push(deck.pop());
+                if (deck.length > 0) p2Hand.push(deck.pop());
             }
-            for(let s of SHAPES) {
-                let idx = deck.indexOf(s);
-                if (idx !== -1) p2Hand.push(deck.splice(idx, 1)[0]);
-            }
-            
-            // Corrigeer handgrootte naar 4 en leg terug
-            while (p1Hand.length > 4) deck.push(p1Hand.pop());
-            while (p2Hand.length > 4) deck.push(p2Hand.pop());
 
-            shuffle(p1Hand);
-            shuffle(p2Hand);
-            shuffle(deck); 
-
-            // Start met 1 steen in het midden
             centerTiles = deck.length > 0 ? [deck.pop()] : []; 
         }
 
         function startGame() {
-            initializeAudio(); // Activeer audio bij klik
+            initializeAudio();
             document.getElementById('overlay').classList.add('hidden');
+            
+            // Reset statusvelden
+            document.getElementById('p1-status').classList.add('hidden');
+            document.getElementById('p2-status').classList.add('hidden');
+            
             initDeck();
             dealInitialHands();
             
@@ -392,12 +449,12 @@
             turnPhase = 'discard'; 
             gameActive = true;
             timeRemaining = TIME_LIMIT;
-            p1SabotageUsed = false; // Reset
-            p2SabotageUsed = false; // Reset
+            p1SabotageUsed = false; 
+            p2SabotageUsed = false; 
             
             render();
             startTimer();
-            updateStatus(`Speler 1: Gooi eerst een kaart weg.`);
+            updateStatus(`Speler 1 is aan de beurt. Gooi een kaart weg.`);
         }
 
         function startTimer() {
@@ -411,56 +468,84 @@
 
             timerInterval = setInterval(() => {
                 timeRemaining--;
+                
+                if (gameActive) {
+                    playSound('tick');
+                }
+
                 if (timeRemaining <= 0) endGame(null);
             }, 1000);
         }
 
-        // --- SABOTAGE FUNCTIE ---
+        /**
+         * Verwerkt de sabotage actie, geactiveerd door de NIET-actieve speler
+         * na de discard van de actieve speler.
+         * @param {number} player De speler die de sabotage uitvoert (1 of 2).
+         */
         function handleSabotage(player) {
-            if (!gameActive || player !== currentPlayer || turnPhase !== 'discard') return;
+            // De tegenstander is de speler die de sabotageknop gebruikt.
+            const opponent = player;
+            const activePlayer = (opponent === 1) ? 2 : 1;
+
+            if (!gameActive || turnPhase !== 'pick') return;
+            if (opponent === currentPlayer) return; 
             
-            const btnId = `p${player}-sabotage-btn`;
-            const btn = document.getElementById(btnId);
-
-            if ((player === 1 && p1SabotageUsed) || (player === 2 && p2SabotageUsed)) return;
-
-            // Markeer knop als gebruikt
-            if (player === 1) p1SabotageUsed = true;
+            let sabotageUsed = (opponent === 1) ? p1SabotageUsed : p2SabotageUsed;
+            if (sabotageUsed) return;
+            
+            if (opponent === 1) p1SabotageUsed = true;
             else p2SabotageUsed = true;
 
-            // Reset de pot en plaats 1 nieuwe kaart
+            // Gooi de potinhoud terug naar de stapel en schud
+            deck.unshift(...centerTiles);
             centerTiles = [];
-            if (deck.length > 0) {
-                centerTiles.push(deck.pop());
+            shuffle(deck);
+
+            // Trek 2 nieuwe kaarten naar de pot (Aanpassing om 2 kaarten te trekken)
+            for (let i = 0; i < 2; i++) { 
+                if (deck.length > 0) {
+                    centerTiles.push(deck.pop());
+                }
             }
 
             playSound('sabotage');
-            updateStatus(`Speler ${player} heeft de pot gesaboteerd! Gooi nu een kaart weg om de tweede kaart te trekken.`);
+            updateStatus(`Sabotage! Speler ${opponent} heeft de pot gewisseld. Speler ${activePlayer} moet nu kiezen uit de nieuwe pot.`);
             
-            // Knop uitschakelen en renderen
-            btn.disabled = true;
-            render();
+            render(true); 
         }
 
 
+        /**
+         * Verwerkt het weggooien van een kaart. Dit activeert Sabotage voor de tegenspeler.
+         */
         function handleHandClick(player, index) {
             if (!gameActive) return;
             if (player !== currentPlayer) return;
             if (turnPhase !== 'discard') return;
 
-            const card = (player === 1) ? p1Hand.splice(index, 1)[0] : p2Hand.splice(index, 1)[0];
+            const hand = (player === 1) ? p1Hand : p2Hand;
+            const card = hand.splice(index, 1)[0];
             deck.unshift(card); 
             playSound('click');
 
-            // Voeg de tweede (willekeurige) kaart toe aan de pot
             if (deck.length > 0) {
-                centerTiles.push(deck.pop()); 
+                const newCenterCard = deck.pop();
+                centerTiles.push(newCenterCard); 
                 playSound('appear');
             }
 
             turnPhase = 'pick';
-            updateStatus(`Speler ${currentPlayer}: Kies nu een kaart uit de pot.`);
-            render(true); 
+            
+            const opponent = (player === 1) ? 2 : 1;
+            const sabotageAllowed = (opponent === 1 ? !p1SabotageUsed : !p2SabotageUsed);
+            
+            let statusText = `Speler ${currentPlayer}: Kies een kaart uit de pot.`;
+            if (sabotageAllowed) {
+                statusText = `Speler ${opponent} kan nu **saboteren** of Speler ${currentPlayer} kiest een kaart uit de pot.`;
+            }
+            updateStatus(statusText);
+            
+            render(true);
         }
 
         function handleCenterClick(index) {
@@ -474,7 +559,8 @@
             playSound('pickup');
             centerTiles.splice(index, 1); 
 
-            if (checkWin(currentPlayer === 1 ? p1Hand : p2Hand)) {
+            const currentHand = (currentPlayer === 1) ? p1Hand : p2Hand;
+            if (checkWin(currentHand)) {
                 endGame(currentPlayer);
                 return;
             }
@@ -495,35 +581,59 @@
             return false;
         }
 
+        function displayPlayerEndStatus(playerId, isWinner) {
+            const statusEl = document.getElementById(`p${playerId}-status`);
+            statusEl.classList.remove('hidden', 'win-message', 'lose-message');
+            
+            if (isWinner) {
+                statusEl.innerText = 'GEWONNEN! 🎉';
+                statusEl.classList.add('win-message');
+            } else {
+                statusEl.innerText = 'VERLOREN... 😔';
+                statusEl.classList.add('lose-message');
+            }
+        }
+
+
         function endGame(winner) {
             gameActive = false;
             clearInterval(timerInterval);
             document.getElementById('timer-layer').style.transition = 'none';
-            
+            updateStatus('Spel voorbij.');
+
             const overlay = document.getElementById('overlay');
             const title = document.getElementById('overlay-title');
-            const msg = document.getElementById('overlay-msg');
+            const msg = document.getElementById('overlay-msg'); 
             const btn = overlay.querySelector('button');
 
-            overlay.classList.remove('hidden');
-            btn.innerText = "Nog een keer";
-
+            btn.innerText = "Nog een keer spelen";
+            title.classList.remove('win-anim');
+            
             if (winner) {
                 playSound('win');
-                title.innerText = `Speler ${winner} wint!`;
+                displayPlayerEndStatus(winner, true);
+                displayPlayerEndStatus((winner === 1 ? 2 : 1), false);
+
+                title.innerText = `🥳 Speler ${winner} wint! 🎉`;
                 title.classList.add('win-anim');
-                msg.innerText = "Geweldig! Je hebt 3 gelijke vormen.";
+                msg.innerText = "Geweldig! Je hebt 3 gelijke vormen verzameld.";
             } else {
                 playSound('lose');
-                title.innerText = "TIJD OP!";
-                title.classList.remove('win-anim');
-                msg.innerText = "Niemand heeft op tijd gewonnen.";
+                displayPlayerEndStatus(1, false);
+                displayPlayerEndStatus(2, false);
+                
+                title.innerText = "⏱️ TIJD OP! ⏱️";
+                msg.innerText = "Niemand heeft op tijd gewonnen. Probeer het opnieuw!";
             }
+
+            overlay.classList.remove('hidden');
+            
+            render(); 
         }
 
         function updateStatus(text) {
             const el = document.getElementById('status-bar');
-            el.style.animation = 'none'; el.offsetHeight; el.style.animation = null; 
+            el.style.animation = 'none'; el.offsetHeight; el.style.animation = 'fadeIn 0.5s'; 
             el.innerText = text;
         }
 
@@ -548,36 +658,40 @@
             const p1Area = document.getElementById('p1-area');
             const p2Area = document.getElementById('p2-area');
             
-            // De ID's van de knoppen zijn NIET gewisseld (p1-sabotage-btn blijft p1-sabotage-btn)
-            // Maar ze zijn fysiek omgewisseld in de HTML.
             const p1Btn = document.getElementById('p1-sabotage-btn');
             const p2Btn = document.getElementById('p2-sabotage-btn');
 
             // Highlight actieve speler
-            if (currentPlayer === 1) {
-                p1Area.classList.add('active-turn'); p2Area.classList.remove('active-turn');
+            if (gameActive) {
+                if (currentPlayer === 1) {
+                    p1Area.classList.add('active-turn'); p2Area.classList.remove('active-turn');
+                } else {
+                    p1Area.classList.remove('active-turn'); p2Area.classList.add('active-turn');
+                }
             } else {
-                p1Area.classList.remove('active-turn'); p2Area.classList.add('active-turn');
+                p1Area.classList.remove('active-turn'); p2Area.classList.remove('active-turn');
             }
             
-            // Sabotage knop status (de logica blijft gebaseerd op de ID's en de speler)
-            if (p1Btn) p1Btn.disabled = !gameActive || currentPlayer !== 1 || p1SabotageUsed || turnPhase !== 'discard';
-            if (p2Btn) p2Btn.disabled = !gameActive || currentPlayer !== 2 || p2SabotageUsed || turnPhase !== 'discard';
-
-
+            // Sabotage Knop Logica
+            if (p1Btn) p1Btn.disabled = !gameActive || currentPlayer !== 2 || turnPhase !== 'pick' || p1SabotageUsed;
+            if (p2Btn) p2Btn.disabled = !gameActive || currentPlayer !== 1 || turnPhase !== 'pick' || p2SabotageUsed;
+            
+            // Render Hand Speler 1
             p1Container.innerHTML = p1Hand.map((val, idx) => {
-                const disabled = (currentPlayer !== 1 || turnPhase !== 'discard');
+                const disabled = (!gameActive || currentPlayer !== 1 || turnPhase !== 'discard');
                 return createCardHTML(val, `handleHandClick(1, ${idx})`, disabled, false);
             }).join('');
 
+            // Render Hand Speler 2
             p2Container.innerHTML = p2Hand.map((val, idx) => {
-                const disabled = (currentPlayer !== 2 || turnPhase !== 'discard');
+                const disabled = (!gameActive || currentPlayer !== 2 || turnPhase !== 'discard');
                 return createCardHTML(val, `handleHandClick(2, ${idx})`, disabled, false);
             }).join('');
 
+            // Render Pot
             centerContainer.innerHTML = centerTiles.map((val, idx) => {
-                const disabled = (turnPhase !== 'pick');
-                const isNew = (animateLastCenterCard && idx === centerTiles.length - 1);
+                const disabled = (!gameActive || turnPhase !== 'pick');
+                const isNew = (animateLastCenterCard && idx === centerTiles.length - 1); 
                 return createCardHTML(val, `handleCenterClick(${idx})`, disabled, isNew);
             }).join('');
         }
